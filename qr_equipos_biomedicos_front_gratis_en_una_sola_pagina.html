@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ficha de Equipo Biomédico</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root{
+      --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb; --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444; --chip:#1f2937;
+      --accent:#38bdf8; --border:#1f2937; --shadow:0 10px 25px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:linear-gradient(120deg,#0b1224,#111827 40%,#0b1224 100%); color:var(--text)}
+    .wrap{max-width:1080px; margin:40px auto; padding:20px}
+    .top{display:flex; gap:16px; align-items:center; flex-wrap:wrap}
+    h1{font-size:28px; margin:0}
+    .pill{background:var(--chip); color:#cbd5e1; padding:6px 10px; border-radius:999px; font-size:12px; border:1px solid var(--border)}
+    .grid{display:grid; grid-template-columns:repeat(12,1fr); gap:16px; margin-top:18px}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)); border:1px solid var(--border); box-shadow:var(--shadow); border-radius:16px; padding:16px}
+    .span-4{grid-column:span 4}
+    .span-8{grid-column:span 8}
+    .kpi{display:flex; align-items:center; justify-content:space-between; margin:8px 0}
+    .kpi .v{font-size:20px; font-weight:700}
+    .kpi small{color:var(--muted)}
+    .bad{color:var(--bad)} .warn{color:var(--warn)} .ok{color:var(--ok)}
+    .section-title{font-weight:700; letter-spacing:.3px; margin:0 0 8px 0}
+    .muted{color:var(--muted)}
+    .row{display:flex; gap:12px; flex-wrap:wrap}
+    .tag{background:#0b1224; border:1px solid var(--border); padding:6px 8px; border-radius:10px; font-size:12px}
+    .ir{font-size:40px; font-weight:800}
+    .sem{display:flex; gap:8px; align-items:center}
+    .dot{width:10px; height:10px; border-radius:50%}
+    .dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)} .dot.bad{background:var(--bad)}
+    .footer{margin-top:22px; font-size:12px; color:var(--muted); display:flex; justify-content:space-between; flex-wrap:wrap}
+    .btn{background:var(--accent); color:#062233; border:none; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:700}
+    .input{background:#0b1224; color:var(--text); border:1px solid var(--border); padding:10px 12px; border-radius:10px; width:240px}
+    .table{width:100%; border-collapse:collapse; font-size:14px}
+    .table th,.table td{border-bottom:1px solid var(--border); padding:8px 6px; text-align:left}
+    .right{float:right}
+    @media (max-width:900px){.span-4,.span-8{grid-column:span 12}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <h1>Ficha del Equipo</h1>
+      <span class="pill" id="eidPill">equipo_id: —</span>
+      <span class="pill" id="estadoPill">Estado: —</span>
+      <span class="pill" id="criticidadPill">Criticidad: —</span>
+      <div class="right">
+        <input class="input" id="equipoInput" placeholder="BM-VENT-000123" />
+        <button class="btn" id="goBtn">Abrir equipo</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card span-4" id="cardInfo">
+        <p class="section-title">Datos de compra</p>
+        <div class="kpi"><small>Fecha de compra</small><div class="v" id="fechaCompra">—</div></div>
+        <div class="kpi"><small>Valor de compra</small><div class="v" id="valorCompra">—</div></div>
+        <div class="kpi"><small>Vida útil (años)</small><div class="v" id="vidaUtil">—</div></div>
+        <hr style="border-color:var(--border)">
+        <p class="section-title">Ficha técnica</p>
+        <div class="kpi"><small>Tipo</small><div class="v" id="tipo">—</div></div>
+        <div class="kpi"><small>Marca / Modelo</small><div class="v" id="marcaModelo">—</div></div>
+        <div class="kpi"><small>Serie</small><div class="v" id="serie">—</div></div>
+        <div class="kpi"><small>Ubicación</small><div class="v" id="ubicacion">—</div></div>
+      </div>
+
+      <div class="card span-8">
+        <p class="section-title">Uso mensual (horas)</p>
+        <canvas id="usoChart" height="110"></canvas>
+        <div class="row" style="margin-top:10px">
+          <span class="tag" id="capacidadTag">Capacidad objetivo: — h/mes</span>
+          <span class="tag" id="media12mTag">Media 12m: — h/mes</span>
+          <span class="tag" id="tendenciaTag">Tendencia: —</span>
+        </div>
+      </div>
+
+      <div class="card span-4">
+        <p class="section-title">Índice de Renovación (IR)</p>
+        <div class="ir" id="irNum">—</div>
+        <div class="sem" id="sem">
+          <span class="dot"></span>
+          <strong id="decisionTxt">—</strong>
+        </div>
+        <p class="muted" style="margin-top:8px">El IR pondera edad, costos, obsolescencia y uso para apoyar la decisión de renovar.</p>
+        <div class="row">
+          <span class="tag" id="edadPct">Edad%: —</span>
+          <span class="tag" id="costoPct">Costo%: —</span>
+          <span class="tag" id="obsoPct">Obso%: —</span>
+          <span class="tag" id="usoAdj">f(Uso%): —</span>
+        </div>
+      </div>
+
+      <div class="card span-8">
+        <p class="section-title">Mantenimientos (últimos 12 meses)</p>
+        <table class="table" id="mntTable">
+          <thead>
+            <tr><th>Fecha</th><th>Tipo</th><th>Costo</th><th>Fuera de servicio (h)</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>
+        <strong>Cómo usar:</strong> añade <code>?equipo_id=BM-VENT-000123</code> a la URL (o usa el buscador arriba). Genera un QR con esa URL.
+      </div>
+      <div>
+        <button class="btn" id="pdfBtn">Exportar PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====================== CONFIGURACIÓN ======================
+    // Modo de datos: 1) Google Sheets publicado (CSV)  2) JSON estático /data/{equipo_id}.json  3) Demo local
+    const CONFIG = {
+      modo: 'demo', // 'sheets' | 'json' | 'demo'
+      // GOOGLE SHEETS (publicado): pega aquí los enlaces CSV de cada "tabla".
+      sheets: {
+        equiposCSV: 'PEGAR_URL_CSV_EQUIPOS',
+        usoCSV: 'PEGAR_URL_CSV_USO',
+        mntCSV: 'PEGAR_URL_CSV_MANTENIMIENTOS',
+        obsoCSV: 'PEGAR_URL_CSV_OBSOLESCENCIA'
+      },
+      // JSON: alojar archivos en /data/BM-VENT-000123.json
+      jsonBase: './data/',
+      capacidadObjetivo: 120, // h/mes de referencia para Uso%
+      pesos: { edad:0.35, costo:0.25, obso:0.25, uso:0.15 },
+      umbrales: { renovar:70, vigilar:50 }
+    };
+
+    // ====================== UTILIDADES ======================
+    const $ = sel => document.querySelector(sel);
+    const fmtMoney = v => new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(v||0);
+    const fmtNum = v => (v==null||Number.isNaN(v)) ? '—' : new Intl.NumberFormat('es-CO',{maximumFractionDigits:1}).format(v);
+    const getParam = (k, d=null) => new URLSearchParams(location.search).get(k) || d;
+
+    async function fetchCSV(url){
+      const res = await fetch(url);
+      const text = await res.text();
+      // parse simple CSV (asumimos sin comas escapadas en demo rápida)
+      const [head,...rows] = text.trim().split(/\r?\n/).map(r=>r.split(','));
+      const cols = head.map(h=>h.trim());
+      return rows.map(r=>Object.fromEntries(r.map((v,i)=>[cols[i], v.trim()])));
+    }
+
+    function movingAvg(arr, window=3){
+      const out=[]; for(let i=0;i<arr.length;i++){ const s=Math.max(0,i-window+1); const slice=arr.slice(s,i+1); out.push(slice.reduce((a,b)=>a+b,0)/slice.length); } return out;
+    }
+
+    function monthKey(y,m){ return `${y}-${String(m).padStart(2,'0')}`; }
+
+    function trend(arr){ if(arr.length<2) return 0; const x=arr.map((_,i)=>i), y=arr; const n=arr.length; const meanX = x.reduce((a,b)=>a+b,0)/n; const meanY = y.reduce((a,b)=>a+b,0)/n; let num=0, den=0; for(let i=0;i<n;i++){ num += (x[i]-meanX)*(y[i]-meanY); den += (x[i]-meanX)**2; } const slope = den? num/den : 0; return slope; }
+
+    function usoPenalty(usoPct){
+      if(usoPct<40) return 40; if(usoPct>120) return 20; return 0; // óptimo 60-100 → 0 (simplificado)
+    }
+
+    function decisionFromIR(ir){
+      if(ir>=CONFIG.umbrales.renovar) return {txt:'Renovar', cls:'bad'};
+      if(ir>=CONFIG.umbrales.vigilar) return {txt:'Monitorear', cls:'warn'};
+      return {txt:'Mantener', cls:'ok'};
+    }
+
+    // ====================== CARGA DE DATOS ======================
+    async function loadData(equipoId){
+      if(CONFIG.modo==='demo') return demoData(equipoId);
+      if(CONFIG.modo==='json'){
+        const res = await fetch(`${CONFIG.jsonBase}${encodeURIComponent(equipoId)}.json`);
+        if(!res.ok) throw new Error('No existe JSON del equipo');
+        return res.json();
+      }
+      if(CONFIG.modo==='sheets'){
+        const [equipos, usos, mnts, obso] = await Promise.all([
+          fetchCSV(CONFIG.sheets.equiposCSV),
+          fetchCSV(CONFIG.sheets.usoCSV),
+          fetchCSV(CONFIG.sheets.mntCSV),
+          fetchCSV(CONFIG.sheets.obsoCSV)
+        ]);
+        const eq = equipos.find(r=>r.equipo_id===equipoId);
+        if(!eq) throw new Error('Equipo no encontrado en hoja');
+        return {
+          equipo: {
+            equipo_id:eq.equipo_id, tipo:eq.tipo, marca:eq.marca, modelo:eq.modelo, serie:eq.serie,
+            fecha_compra:eq.fecha_compra, valor_compra:+eq.valor_compra, vida_util_anios:+eq.vida_util_anios,
+            ubicacion:eq.ubicacion, criticidad:eq.criticidad, estado:eq.estado
+          },
+          uso: usos.filter(r=>r.equipo_id===equipoId).map(r=>({anio:+r.anio, mes:+r.mes, horas:+r.horas_uso})),
+          mantenimientos: mnts.filter(r=>r.equipo_id===equipoId).map(r=>({fecha:r.fecha, tipo:r.tipo, costo:+r.costo, fuera_h:+r.tiempo_fuera_servicio_h})),
+          obsolescencia: obso.filter(r=>r.equipo_id===equipoId)
+        };
+      }
+      throw new Error('Modo de datos no soportado');
+    }
+
+    function demoData(equipoId){
+      return {
+        equipo: {
+          equipo_id: equipoId,
+          tipo:'VENTILADOR', marca:'Dräger', modelo:'XYZ', serie:'ABC123',
+          fecha_compra:'2021-03-10', valor_compra:48000000, vida_util_anios:10,
+          ubicacion:'UCI 3', criticidad:'Alta', estado:'Operativo'
+        },
+        uso: [
+          {anio:2024,mes:11,horas:136}, {anio:2024,mes:12,horas:142},
+          {anio:2025,mes:1,horas:128}, {anio:2025,mes:2,horas:121},
+          {anio:2025,mes:3,horas:131}, {anio:2025,mes:4,horas:118},
+          {anio:2025,mes:5,horas:124}, {anio:2025,mes:6,horas:133},
+          {anio:2025,mes:7,horas:126}, {anio:2025,mes:8,horas:119},
+          {anio:2025,mes:9,horas:129}, {anio:2025,mes:10,horas:122}
+        ],
+        mantenimientos: [
+          {fecha:'2025-02-15', tipo:'Preventivo', costo:350000, fuera_h:3},
+          {fecha:'2025-06-08', tipo:'Correctivo', costo:1600000, fuera_h:12}
+        ],
+        obsolescencia: []
+      };
+    }
+
+    // ====================== RENDER ======================
+    let chart;
+    function render(e){
+      // Header
+      $('#eidPill').textContent = `equipo_id: ${e.equipo.equipo_id}`;
+      $('#estadoPill').textContent = `Estado: ${e.equipo.estado}`;
+      $('#criticidadPill').textContent = `Criticidad: ${e.equipo.criticidad}`;
+      $('#equipoInput').value = e.equipo.equipo_id;
+
+      // Info de compra / técnica
+      $('#fechaCompra').textContent = e.equipo.fecha_compra;
+      $('#valorCompra').textContent = fmtMoney(e.equipo.valor_compra);
+      $('#vidaUtil').textContent = fmtNum(e.equipo.vida_util_anios);
+      $('#tipo').textContent = e.equipo.tipo;
+      $('#marcaModelo').textContent = `${e.equipo.marca} / ${e.equipo.modelo}`;
+      $('#serie').textContent = e.equipo.serie;
+      $('#ubicacion').textContent = e.equipo.ubicacion;
+
+      // Uso mensual
+      const usoSorted = [...e.uso].sort((a,b)=> a.anio!==b.anio ? a.anio-b.anio : a.mes-b.mes);
+      const labels = usoSorted.map(u=> monthKey(u.anio,u.mes));
+      const data = usoSorted.map(u=> u.horas);
+      const ma = movingAvg(data, 3);
+      const cap = CONFIG.capacidadObjetivo;
+
+      $('#capacidadTag').textContent = `Capacidad objetivo: ${cap} h/mes`;
+      const mean12 = data.length? data.reduce((a,b)=>a+b,0)/data.length : 0;
+      $('#media12mTag').textContent = `Media 12m: ${fmtNum(mean12)} h/mes`;
+      const slope = trend(data);
+      $('#tendenciaTag').textContent = `Tendencia: ${slope>0? '↑ alza' : (slope<0? '↓ baja' : '→ estable')}`;
+
+      if(chart) chart.destroy();
+      const ctx = document.getElementById('usoChart');
+      chart = new Chart(ctx, {
+        type:'line',
+        data:{
+          labels,
+          datasets:[
+            {label:'Horas de uso', data, borderWidth:2, tension:.25},
+            {label:'Media móvil (3)', data:ma, borderWidth:2, borderDash:[6,6], tension:.25},
+            {label:'Capacidad objetivo', data:labels.map(()=>cap), borderWidth:1, borderDash:[2,4], pointRadius:0}
+          ]
+        },
+        options:{ responsive:true, plugins:{ legend:{labels:{color:'#cbd5e1'}} }, scales:{ x:{ticks:{color:'#9ca3af'}}, y:{ticks:{color:'#9ca3af'}} } }
+      });
+
+      // Mantenimientos
+      const tb = document.querySelector('#mntTable tbody');
+      tb.innerHTML = '';
+      const ult12 = e.mantenimientos // (para demo no filtramos por fecha exacta)
+        .sort((a,b)=> a.fecha.localeCompare(b.fecha));
+      let costoAnual = 0;
+      ult12.forEach(r=>{
+        costoAnual += (r.costo||0);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${r.fecha}</td><td>${r.tipo}</td><td>${fmtMoney(r.costo)}</td><td>${fmtNum(r.fuera_h)}</td>`;
+        tb.appendChild(tr);
+      });
+
+      // Obsolescencia → puntaje
+      let obsoPct=0; // 0=sin avisos, 50=EoS, 100=EoL/alerta crítica
+      const obso = (e.obsolescencia||[]).map(o=> (o.evento||o.detalle||'')).join(' ').toLowerCase();
+      if(obso.includes('eol') || obso.includes('alerta')) obsoPct = 100; else if(obso.includes('eos')) obsoPct = 50;
+
+      // Índice de Renovación
+      const hoy = new Date();
+      const edadAnhos = Math.max(0, (hoy - new Date(e.equipo.fecha_compra)) / (365.25*24*3600*1000));
+      const edadPct = Math.min(100, 100 * (edadAnhos / (e.equipo.vida_util_anios||1)));
+      const costoPct = 100 * (costoAnual / (0.1 * (e.equipo.valor_compra||1)));
+      const usoPct = 100 * (mean12 / CONFIG.capacidadObjetivo);
+      const usoAdj = usoPenalty(usoPct);
+
+      const IR = CONFIG.pesos.edad*edadPct + CONFIG.pesos.costo*costoPct + CONFIG.pesos.obso*obsoPct + CONFIG.pesos.uso*usoAdj;
+      const dec = decisionFromIR(IR);
+
+      $('#irNum').textContent = fmtNum(IR);
+      $('#edadPct').textContent = `Edad%: ${fmtNum(edadPct)}`;
+      $('#costoPct').textContent = `Costo%: ${fmtNum(costoPct)}`;
+      $('#obsoPct').textContent = `Obso%: ${fmtNum(obsoPct)}`;
+      $('#usoAdj').textContent = `f(Uso%): ${fmtNum(usoAdj)}`;
+      $('#decisionTxt').textContent = dec.txt;
+      const dot = document.querySelector('.dot'); dot.className = `dot ${dec.cls}`;
+    }
+
+    // ====================== NAVEGACIÓN ======================
+    async function init(){
+      const eid = getParam('equipo_id','BM-VENT-000123');
+      $('#equipoInput').value = eid;
+      try{
+        const data = await loadData(eid);
+        render(data);
+        $('#eidPill').textContent = `equipo_id: ${eid}`;
+      }catch(err){
+        alert('Error cargando datos: '+err.message);
+      }
+    }
+
+    $('#goBtn').addEventListener('click', ()=>{
+      const v = $('#equipoInput').value.trim(); if(!v) return; location.search = `?equipo_id=${encodeURIComponent(v)}`;
+    });
+
+    // Exportar PDF (usa print del navegador)
+    $('#pdfBtn').addEventListener('click', ()=>{ window.print(); });
+
+    init();
+  </script>
+</body>
+</html>
